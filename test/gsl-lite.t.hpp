@@ -31,9 +31,11 @@
 #ifdef __clang__
 # pragma clang diagnostic ignored "-Wstring-conversion"
 # pragma clang diagnostic ignored "-Wunused-parameter"
-# pragma clang diagnostic ignored "-Wunused-template"
 # pragma clang diagnostic ignored "-Wunused-function"
 # pragma clang diagnostic ignored "-Wunused-member-function"
+# if ! gsl_BETWEEN( gsl_COMPILER_CLANG_VERSION, 1, 500 )
+#  pragma clang diagnostic ignored "-Wunused-template"
+# endif
 #elif defined __GNUC__
 # pragma GCC   diagnostic ignored "-Wunused-parameter"
 # pragma GCC   diagnostic ignored "-Wunused-function"
