@@ -147,13 +147,14 @@ endfunction()
 
 # Make target, compile for given standard if specified:
 
-function( make_target target std )
+function( make_target target std extra )
     message( STATUS "Make target: '${std}'" )
 
     add_executable            ( ${target} ${SOURCES}  )
     target_link_libraries     ( ${target} PRIVATE ${PACKAGE} )
     target_compile_options    ( ${target} PRIVATE ${OPTIONS} )
-    target_compile_definitions( ${target} PRIVATE ${DEFINITIONS} )
+    set( def ${DEFINITIONS} ${extra} )
+    target_compile_definitions( ${target} PRIVATE ${def} )
 
     if( std )
         if( MSVC )
@@ -169,61 +170,73 @@ function( make_target target std )
     endif()
 endfunction()
 
-# Add generic executable, unless -std flags can be specified:
+function( make_targets postfix extra )
+    # Add generic executable, unless -std flags can be specified:
 
-if( NOT HAS_STD_FLAGS )
-    make_target( ${PROGRAM}.t "" )
-else()
-    # unconditionally add C++98 variant as MSVC has no option for it:
-    if( HAS_CPP98_FLAG )
-        make_target( ${PROGRAM}-cpp98.t 98 )
+    if( NOT HAS_STD_FLAGS )
+        make_target( ${PROGRAM}${postfix}.t "" ${extra} )
     else()
-        make_target( ${PROGRAM}-cpp98.t "" )
-    endif()
+        # unconditionally add C++98 variant as MSVC has no option for it:
+        if( HAS_CPP98_FLAG )
+            make_target( ${PROGRAM}${postfix}-cpp98.t 98 "${extra}" )
+        else()
+            make_target( ${PROGRAM}${postfix}-cpp98.t "" "${extra}" )
+        endif()
 
-    if( HAS_CPP11_FLAG )
-        make_target( ${PROGRAM}-cpp11.t 11 )
-    endif()
+        if( HAS_CPP11_FLAG )
+            make_target( ${PROGRAM}${postfix}-cpp11.t 11 "${extra}" )
+        endif()
 
-    if( HAS_CPP14_FLAG )
-        make_target( ${PROGRAM}-cpp14.t 14 )
-    endif()
+        if( HAS_CPP14_FLAG )
+            make_target( ${PROGRAM}${postfix}-cpp14.t 14 "${extra}" )
+        endif()
 
-    if( HAS_CPP17_FLAG )
-        make_target( ${PROGRAM}-cpp17.t 17 )
-        enable_msvs_guideline_checker( ${PROGRAM}-cpp17.t )
-    endif()
+        if( HAS_CPP17_FLAG )
+            make_target( ${PROGRAM}${postfix}-cpp17.t 17 "${extra}" )
+            enable_msvs_guideline_checker( ${PROGRAM}${postfix}-cpp17.t )
+        endif()
 
-    if( HAS_CPPLATEST_FLAG )
-        make_target( ${PROGRAM}-cpplatest.t latest )
+        if( HAS_CPPLATEST_FLAG )
+            make_target( ${PROGRAM}${postfix}-cpplatest.t latest "${extra}" )
+        endif()
     endif()
-endif()
+endfunction()
+
+make_targets( "" "" )
+make_targets( "-nnconstref" "-Dgsl_CONFIG_NOT_NULL_GET_BY_CONST_REF=1" )
+make_targets( "-nnexplicit" "-Dgsl_CONFIG_NOT_NULL_EXPLICIT_CTOR=1" )
 
 # Configure unit tests via CTest:
 
 enable_testing()
 
-if( HAS_STD_FLAGS )
-    # Unconditionally add C++98 variant for MSVC:
-    add_test(     NAME test-cpp98     COMMAND ${PROGRAM}-cpp98.t )
+function( add_tests postfix )
+    if( HAS_STD_FLAGS )
+        # Unconditionally add C++98 variant for MSVC:
+        add_test(     NAME test${postfix}-cpp98     COMMAND ${PROGRAM}${postfix}-cpp98.t )
 
-    if( HAS_CPP11_FLAG )
-        add_test( NAME test-cpp11     COMMAND ${PROGRAM}-cpp11.t )
+        if( HAS_CPP11_FLAG )
+            add_test( NAME test${postfix}-cpp11     COMMAND ${PROGRAM}${postfix}-cpp11.t )
+        endif()
+        if( HAS_CPP14_FLAG )
+            add_test( NAME test${postfix}-cpp14     COMMAND ${PROGRAM}${postfix}-cpp14.t )
+        endif()
+        if( HAS_CPP17_FLAG )
+            add_test( NAME test${postfix}-cpp17     COMMAND ${PROGRAM}${postfix}-cpp17.t )
+        endif()
+        if( HAS_CPPLATEST_FLAG )
+            add_test( NAME test${postfix}-cpplatest COMMAND ${PROGRAM}${postfix}-cpplatest.t )
+        endif()
+    else()
+        add_test(     NAME test${postfix}           COMMAND ${PROGRAM}${postfix}. --pass )
+        add_test(     NAME list_version${postfix}   COMMAND ${PROGRAM}${postfix}. --version )
+        add_test(     NAME list_tags${postfix}      COMMAND ${PROGRAM}${postfix}. --list-tags )
+        add_test(     NAME list_tests${postfix}     COMMAND ${PROGRAM}${postfix}. --list-tests )
     endif()
-    if( HAS_CPP14_FLAG )
-        add_test( NAME test-cpp14     COMMAND ${PROGRAM}-cpp14.t )
-    endif()
-    if( HAS_CPP17_FLAG )
-        add_test( NAME test-cpp17     COMMAND ${PROGRAM}-cpp17.t )
-    endif()
-    if( HAS_CPPLATEST_FLAG )
-        add_test( NAME test-cpplatest COMMAND ${PROGRAM}-cpplatest.t )
-    endif()
-else()
-    add_test(     NAME test           COMMAND ${PROGRAM}. --pass )
-    add_test(     NAME list_version   COMMAND ${PROGRAM}. --version )
-    add_test(     NAME list_tags      COMMAND ${PROGRAM}. --list-tags )
-    add_test(     NAME list_tests     COMMAND ${PROGRAM}. --list-tests )
-endif()
+endfunction()
+
+add_tests( "" )
+add_tests( "-nnconstref" )
+add_tests( "-nnexplicit" )
 
 # end of file
