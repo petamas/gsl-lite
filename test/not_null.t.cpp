@@ -419,6 +419,16 @@ CASE( "not_null<>: Allows dereferencing (raw pointer)" )
     EXPECT( *p == i );
 }
 
+CASE( "not_null<>: Can be swapped with itself (raw pointer)" )
+{
+    int i = 12;
+    not_null< int* > p( &i );
+
+    std::swap(p, p);
+
+    EXPECT( p == &i );
+}
+
 #if gsl_HAVE( SHARED_PTR )
 CASE( "not_null<>: Terminates construction from a null pointer value (shared_ptr)" )
 {
@@ -632,6 +642,17 @@ CASE( "not_null<>: Allows dereferencing (shared_ptr)" )
     not_null< shared_ptr< int > > p( pi );
 
     EXPECT( *p == *pi );
+}
+
+CASE( "not_null<>: Can be swapped with itself (shared_ptr)" )
+{
+    int i = 12;
+    shared_ptr< int > pi = make_shared< int >(i);
+    not_null< shared_ptr< int > > p( pi );
+    
+    std::swap(p, p);
+
+    EXPECT( *p == i );
 }
 
 #endif // gsl_HAVE( SHARED_PTR )
@@ -891,6 +912,17 @@ CASE( "not_null<>: Allows dereferencing (unique_ptr)" )
     int i = 12;
     unique_ptr< int > pi = make_unique< int >(i);
     not_null< unique_ptr< int > > p( std::move(pi) );
+
+    EXPECT( *p == i );
+}
+
+CASE( "not_null<>: Can be swapped with itself (unique_ptr)" )
+{
+    int i = 12;
+    unique_ptr< int > pi = make_unique< int >(i);
+    not_null< unique_ptr< int > > p( std::move(pi) );
+    
+    std::swap(p, p);
 
     EXPECT( *p == i );
 }

@@ -2147,11 +2147,11 @@ public:
     gsl_constexpr14 not_null( not_null && other ) gsl_noexcept
     : data_( std::move( other.data_ ) )
     {
-        gsl_Expects( data_.ptr_ != gsl_nullptr );
+        gsl_Expects( this == &other || data_.ptr_ != gsl_nullptr ); // self-move-assignment of a moved-from object is allowed to make std::swap work
     }
     gsl_constexpr14 not_null & operator=( not_null && other ) gsl_noexcept
     {
-        gsl_Expects( other.data_.ptr_ != gsl_nullptr );
+        gsl_Expects( this == &other || other.data_.ptr_ != gsl_nullptr ); // self-move-assignment of a moved-from object is allowed to make std::swap work
         data_ = std::move( other.data_ );
         return *this;
     }
